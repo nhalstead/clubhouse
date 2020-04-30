@@ -15,12 +15,13 @@ type ErrorResponse struct {
 	Tag     string `json:"tag"`
 }
 
-const BaseURL = "https://api.clubhouse.io/api/v3"
+const DefaultURL = "https://api.clubhouse.io/api/v3"
 
 func New(token string) *Client {
 	return &Client{
 		Token:      token,
 		HTTPClient: &http.Client{Timeout: 5 * time.Second},
+		URL:        DefaultURL,
 	}
 }
 
@@ -28,6 +29,7 @@ type Client struct {
 	Debug      bool
 	HTTPClient *http.Client
 	Token      string
+	URL        string
 }
 
 func (c *Client) makeRequest(method, path string, body interface{}) (*http.Request, error) {
@@ -36,7 +38,7 @@ func (c *Client) makeRequest(method, path string, body interface{}) (*http.Reque
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s%s?token=%s", BaseURL, path, c.Token)
+	url := fmt.Sprintf("%s%s?token=%s", c.URL, path, c.Token)
 	req, err := http.NewRequest(method, url, &buf)
 	if err != nil {
 		return nil, err
