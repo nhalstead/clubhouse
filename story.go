@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 const (
@@ -74,23 +75,107 @@ func (c *Client) ListStoriesForProject(ctx context.Context, id string) ([]Story,
 	return stories, nil
 }
 
-func (c *Client) StoriesCreateMultiple(ctx context.Context, stories []Story) error {
-	body := map[string][]Story{"stories": stories}
-	path := buildPath("/stories/bulk", "token", c.Token)
+type CreateStoryCommentParams struct {
+	// Required
+	Text string `json:"text"`
+
+	// Optional
+	AuthorID   *string    `json:"author_id,omitempty"`
+	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	ExternalID *string    `json:"external_id,omitempty"`
+	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
+}
+
+type CreateExternalTicketParams struct {
+	// Optional
+	ExternalID  *string `json:"external_id,omitempty"`
+	ExternalURL *string `json:"external_url,omitempty"`
+}
+
+type CreateLabelParams struct {
+	// Required
+	Name string `json:"name"`
+
+	// Optional
+	Color       *string `json:"color,omitempty"`
+	Description *string `json:"description,omitempty"`
+	ExternalID  *string `json:"external_id,omitempty"`
+}
+
+type CreateStoryLinkParams struct {
+	// Required
+	ObjectID  int64  `json:"object_id"`
+	SubjectID int64  `json:"subject_id"`
+	Verb      string `json:"verb"`
+}
+
+type CreateTaskParams struct {
+	// Required
+	Complete    bool   `json:"complete"`
+	Description string `json:"description"`
+
+	// Optional
+	CreatedAt  *time.Time `json:"created_at,omitempty"`
+	ExternalID *string    `json:"external_id,omitempty"`
+	OwnerIDs   []string   `json:"owner_ids,omitempty"`
+	UpdatedAt  *time.Time `json:"updated_at,omitempty"`
+}
+
+type CreateStoryParams struct {
+	// Required
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	ProjectID   int64  `json:"project_id"`
+	Archived    bool   `json:"archived"`
+	StoryType   string `json:"story_type"`
+
+	// Optional
+	Comments            []CreateStoryCommentParams   `json:"comments,omitempty"`
+	CompletedAtOverride *time.Time                   `json:"completed_at_override,omitempty"`
+	CreatedAt           *time.Time                   `json:"created_at,omitempty"`
+	Deadline            *time.Time                   `json:"deadline,omitempty"`
+	EpicID              *int64                       `json:"epic_id,omitempty"`
+	Estimate            *int64                       `json:"estimate,omitempty"`
+	ExternalID          *string                      `json:"external_id,omitempty"`
+	ExternalTickets     []CreateExternalTicketParams `json:"external_tickets,omitempty"`
+	FileIDs             []int64                      `json:"file_ids,omitempty"`
+	FollowerIDs         []string                     `json:"follower_ids,omitempty"`
+	IterationID         *int64                       `json:"iteration_id,omitempty"`
+	Labels              []CreateLabelParams          `json:"labels,omitempty"`
+	LinkedFileIDs       []int64                      `json:"linked_file_ids,omitempty"`
+	OwnerIDs            []string                     `json:"owner_ids,omitempty"`
+	RequestedByID       *string                      `json:"requested_by_id,omitempty"`
+	StartedAtOverride   *time.Time                   `json:"started_at_override,omitempty"`
+	StoryLinks          []CreateStoryLinkParams      `json:"story_links,omitempty"`
+	Tasks               []CreateTaskParams           `json:"tasks,omitempty"`
+	UpdatedAt           *time.Time                   `json:"updated_at,omitempty"`
+	WorkflowStateID     *int64                       `json:"workflow_state_id,omitempty"`
+}
+
+func (c *Client) StoriesCreateMultiple(ctx context.Context, params []CreateStoryParams) ([]*Story, error) {
+	body := map[string][]CreateStoryParams{"stories": params}
+	path := "/stories/bulk"
 
 	req, err := c.makeRequest(http.MethodPost, path, body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resp, err := c.do(req)
 	if err != nil {
-		return fmt.Errorf("Client.StoriesCreateMultiple: %w", err)
+		return nil, err
 	}
 
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("Client.StoriesCreateMultiple: code=%d", resp.StatusCode)
+		return nil, fmt.Errorf("status code %d", resp.StatusCode)
 	}
 
-	return nil
+	var stories []*Story
+	if err := c.decode(resp, &stories); err != nil {
+		return nil, err
+	}
+
+	dumpResponse(resp)
+
+	return stories, nil
 }

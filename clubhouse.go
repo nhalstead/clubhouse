@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"time"
 )
 
@@ -43,6 +44,7 @@ func (c *Client) makeRequest(method, path string, body interface{}) (*http.Reque
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/json")
 
 	if c.Debug {
 		dumpRequest(req)
@@ -100,12 +102,48 @@ func (c *Client) get(path string, data interface{}) error {
 	return nil
 }
 
+func (c *Client) post(path string, body, data interface{}) error {
+	req, err := c.makeRequest(http.MethodPost, path, body)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return err
+	}
+
+	if err := c.decode(resp, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) put(path string, body, data interface{}) error {
+	req, err := c.makeRequest(http.MethodPut, path, body)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return err
+	}
+
+	if err := c.decode(resp, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func dumpResponse(resp *http.Response) {
 	b, _ := httputil.DumpResponse(resp, true)
-	fmt.Println(string(b))
+	fmt.Fprintln(os.Stderr, string(b))
 }
 
 func dumpRequest(req *http.Request) {
 	b, _ := httputil.DumpRequest(req, true)
-	fmt.Println(string(b))
+	fmt.Fprintln(os.Stderr, string(b))
 }

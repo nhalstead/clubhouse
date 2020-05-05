@@ -1,5 +1,7 @@
 package clubhouse
 
+import "context"
+
 type Label struct {
 	AppURL      string `json:"app_url"`
 	Archived    bool   `json:"archived"`
@@ -22,4 +24,16 @@ type Label struct {
 		NumStoriesUnestimated int64 `json:"num_stories_unestimated"`
 	} `json:"stats"`
 	UpdatedAt string `json:"updated_at"`
+}
+
+func (c *Client) AddLabelToMultipleStories(ctx context.Context, ids []int64, params CreateLabelParams) error {
+	path := "/stories/bulk"
+	body := map[string]interface{}{
+		"story_ids":  ids,
+		"labels_add": []CreateLabelParams{params},
+	}
+	if err := c.put(path, body, nil); err != nil {
+		return err
+	}
+	return nil
 }

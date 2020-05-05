@@ -29,10 +29,10 @@ type Project struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func (c *Client) ListProjects(ctx context.Context) ([]Project, error) {
+func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
 	path := "/projects"
 
-	var projects []Project
+	var projects []*Project
 	if err := c.get(path, &projects); err != nil {
 		return nil, err
 	}
