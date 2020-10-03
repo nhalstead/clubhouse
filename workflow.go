@@ -24,3 +24,13 @@ type WorkflowState struct {
 	Verb              string `json:"verb"`
 }
 
+func (c *Client) ListWorkflows() ([]Workflow, error) {
+	path := "/workflows"
+
+	var workflows []Workflow
+	if err := c.get(path, &workflows); err != nil {
+		return nil, err
+	}
+
+	return workflows, nil
+}
