@@ -1,20 +1,15 @@
 package clubhouse_test
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 )
 
 func TestListEpics(t *testing.T) {
-	ctx := context.Background()
 
-	epics, err := client.ListEpics(ctx)
+	epics, err := client.ListEpics()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, _ := json.MarshalIndent(epics, "", "    ")
-	fmt.Println(string(b))
+	AssertNotZero(t, len(epics), "No Epics")
 }
