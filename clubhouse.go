@@ -140,10 +140,10 @@ func (c *Client) put(path string, body, data interface{}) error {
 
 func dumpResponse(resp *http.Response) {
 	b, _ := httputil.DumpResponse(resp, true)
-	fmt.Fprintln(os.Stderr, string(b))
+	_, _ = fmt.Fprintln(os.Stderr, string(b))
 }
 
 func dumpRequest(req *http.Request) {
 	b, _ := httputil.DumpRequest(req, true)
-	fmt.Fprintln(os.Stderr, string(b))
+	_, _ = fmt.Fprintln(os.Stderr, string(b))
 }
