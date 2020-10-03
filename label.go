@@ -1,7 +1,5 @@
 package clubhouse
 
-import "context"
-
 type Label struct {
 	AppURL      string `json:"app_url"`
 	Archived    bool   `json:"archived"`
@@ -26,7 +24,7 @@ type Label struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func (c *Client) AddLabelToMultipleStories(ctx context.Context, ids []int64, params CreateLabelParams) error {
+func (c *Client) AddLabelToMultipleStories(ids []int64, params CreateLabelParams) error {
 	path := "/stories/bulk"
 	body := map[string]interface{}{
 		"story_ids":  ids,

@@ -1,9 +1,5 @@
 package clubhouse
 
-import (
-	"context"
-)
-
 type Project struct {
 	Abbreviation      string   `json:"abbreviation"`
 	AppURL            string   `json:"app_url"`
@@ -29,7 +25,7 @@ type Project struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func (c *Client) ListProjects(ctx context.Context) ([]*Project, error) {
+func (c *Client) ListProjects() ([]*Project, error) {
 	path := "/projects"
 
 	var projects []*Project

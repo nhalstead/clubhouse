@@ -1,17 +1,8 @@
 package clubhouse
 
 import (
-	"context"
 	"time"
 )
-
-func NewEpicsService(c *Client) *EpicsService {
-	return &EpicsService{c: c}
-}
-
-type EpicsService struct {
-	c *Client
-}
 
 type CreateEpicParams struct {
 	// Required
@@ -34,11 +25,11 @@ type CreateEpicParams struct {
 	UpdatedAt           *time.Time          `json:"updated_at,omitempty"`
 }
 
-func (s *EpicsService) CreateEpic(ctx context.Context, params CreateEpicParams) (*Epic, error) {
+func (c *Client) CreateEpic(params CreateEpicParams) (*Epic, error) {
 	path := "/epics"
 
 	var epic Epic
-	if err := s.c.post(path, params, &epic); err != nil {
+	if err := c.post(path, params, &epic); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +43,6 @@ type Epic struct {
 	Completed           bool             `json:"completed"`
 	CompletedAt         time.Time        `json:"completed_at"`
 	CompletedAtOverride time.Time        `json:"completed_at_override"`
-	CreatedAt           time.Time        `json:"created_at"`
 	Deadline            time.Time        `json:"deadline"`
 	Description         string           `json:"description"`
 	EntityType          string           `json:"entity_type"`
@@ -75,29 +65,53 @@ type Epic struct {
 	Started             bool             `json:"started"`
 	StartedAt           time.Time        `json:"started_at"`
 	StartedAtOverride   time.Time        `json:"started_at_override"`
-	State               string           `json:"state"`
-	Stats               struct {
-		AverageCycleTime      int64     `json:"average_cycle_time"`
-		AverageLeadTime       int64     `json:"average_lead_time"`
-		LastStoryUpdate       time.Time `json:"last_story_update"`
-		NumPoints             int64     `json:"num_points"`
-		NumPointsDone         int64     `json:"num_points_done"`
-		NumPointsStarted      int64     `json:"num_points_started"`
-		NumPointsUnstarted    int64     `json:"num_points_unstarted"`
-		NumRelatedDocuments   int64     `json:"num_related_documents"`
-		NumStoriesDone        int64     `json:"num_stories_done"`
-		NumStoriesStarted     int64     `json:"num_stories_started"`
-		NumStoriesUnestimated int64     `json:"num_stories_unestimated"`
-		NumStoriesUnstarted   int64     `json:"num_stories_unstarted"`
-	} `json:"stats"`
-	UpdatedAt string `json:"updated_at"`
+	State               string           `json:"state"` // Deprecated
+	Stats               EpicStats        `json:"stats"`
+	UpdatedAt           string           `json:"updated_at"`
+	CreatedAt           time.Time        `json:"created_at"`
 }
 
-func (s *EpicsService) ListEpics(ctx context.Context) ([]Epic, error) {
+type EpicState struct {
+	ID          int64     `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	EntityType  string    `json:"entity_type"`
+	Type        string    `json:"type"`
+	Color       string    `json:"color"`
+	Position    int64     `json:"position"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type EpicWorkflow struct {
+	ID                 int64       `json:"id"`
+	EntityType         string      `json:"entity_type"`
+	DefaultEpicStateId int64       `json:"default_epic_state_id"`
+	EpicStates         []EpicState `json:"epic_states"`
+	CreatedAt          time.Time   `json:"created_at"`
+	UpdatedAt          time.Time   `json:"updated_at"`
+}
+
+type EpicStats struct {
+	AverageCycleTime      int64     `json:"average_cycle_time"`
+	AverageLeadTime       int64     `json:"average_lead_time"`
+	LastStoryUpdate       time.Time `json:"last_story_update"`
+	NumPoints             int64     `json:"num_points"`
+	NumPointsDone         int64     `json:"num_points_done"`
+	NumPointsStarted      int64     `json:"num_points_started"`
+	NumPointsUnstarted    int64     `json:"num_points_unstarted"`
+	NumRelatedDocuments   int64     `json:"num_related_documents"`
+	NumStoriesDone        int64     `json:"num_stories_done"`
+	NumStoriesStarted     int64     `json:"num_stories_started"`
+	NumStoriesUnestimated int64     `json:"num_stories_unestimated"`
+	NumStoriesUnstarted   int64     `json:"num_stories_unstarted"`
+}
+
+func (c *Client) ListEpics() ([]Epic, error) {
 	path := "/epics"
 
 	var epics []Epic
-	if err := s.c.get(path, &epics); err != nil {
+	if err := c.get(path, &epics); err != nil {
 		return nil, err
 	}
 

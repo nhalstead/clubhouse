@@ -1,7 +1,6 @@
 package clubhouse
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -64,7 +63,7 @@ type Story struct {
 	WorkflowStateID int64       `json:"workflow_state_id"`
 }
 
-func (c *Client) ListStoriesForProject(ctx context.Context, id string) ([]Story, error) {
+func (c *Client) ListStoriesForProject(id string) ([]Story, error) {
 	path := fmt.Sprintf("/projects/%s/stories", id)
 
 	var stories []Story
@@ -152,7 +151,38 @@ type CreateStoryParams struct {
 	WorkflowStateID     *int64                       `json:"workflow_state_id,omitempty"`
 }
 
-func (c *Client) StoriesCreateMultiple(ctx context.Context, params []CreateStoryParams) ([]*Story, error) {
+type UpdateStoriesParam struct {
+	Name                string     `json:"name,omitempty"`
+	Description         string     `json:"description,omitempty"`
+	Archived            bool       `json:"archived"`
+	BeforeStoryID       *int64     `json:"before_id,omitempty"`
+	EpicID              *int64     `json:"epic_id,omitempty"`
+	Estimate            *int64     `json:"estimate,omitempty"`
+	BranchIDs           []*int64   `json:"branch_ids,omitempty"`
+	CommitIDs           []*int64   `json:"commit_ids,omitempty"`
+	FileIDs             []*int64   `json:"file_ids,omitempty"`
+	FollowerIDs         []*int64   `json:"follower_ids,omitempty"`
+	IterationID         []*int64   `json:"iteration_id,omitempty"`
+	StoryType           []*int64   `json:"story_type,omitempty"`
+	StartedAtOverride   *time.Time `json:"started_at_override,omitempty"`
+	CompletedAtOverride *time.Time `json:"completed_at_override,omitempty"`
+}
+
+type DeleteStoriesParam struct {
+	StoryIds []int64 `json:"story_ids"`
+}
+
+
+func (c *Client) StoryCreate(param CreateStoryParams) (*Story, error) {
+	stories, err := c.StoriesCreate([]CreateStoryParams{param})
+
+	if len(stories) != 0 {
+		return stories[0], err
+	}
+	return nil, err
+}
+
+func (c *Client) StoriesCreate(params []CreateStoryParams) ([]*Story, error) {
 	body := map[string][]CreateStoryParams{"stories": params}
 	path := "/stories/bulk"
 
@@ -175,7 +205,87 @@ func (c *Client) StoriesCreateMultiple(ctx context.Context, params []CreateStory
 		return nil, err
 	}
 
-	dumpResponse(resp)
-
 	return stories, nil
+}
+
+func (c *Client) StoryArchive(storyId int64) (*Story, error) {
+	path := fmt.Sprintf("/stories/%d", storyId)
+
+	updateStory := UpdateStoriesParam {
+		Archived: true,
+	}
+
+	req, err := c.makeRequest(http.MethodPut, path, updateStory)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("status code %d", resp.StatusCode)
+	}
+
+	var story *Story
+	if err := c.decode(resp, &story); err != nil {
+		return nil, err
+	}
+
+	return story, nil
+}
+
+func (c *Client) StoryDelete(storyId int64) error {
+	return c.StoriesDelete([]int64{storyId})
+}
+
+func (c *Client) StoriesDelete(storyIds []int64) error {
+	path := "/stories/bulk"
+
+	payload := DeleteStoriesParam{
+		StoryIds: storyIds,
+	}
+
+	req, err := c.makeRequest(http.MethodDelete, path, payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 204 {
+		return fmt.Errorf("status code %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (c *Client) StoryGet(storyId int64) (*Story, error) {
+	path := fmt.Sprintf("/stories/%d", storyId)
+
+	req, err := c.makeRequest(http.MethodGet, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("status code %d", resp.StatusCode)
+	}
+
+	var story *Story
+	if err := c.decode(resp, &story); err != nil {
+		return nil, err
+	}
+
+	return story, nil
 }
